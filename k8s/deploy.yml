@@ -1,0 +1,231 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: laravel-eks-api-env
+data:
+  APP_NAME: Laravel
+  APP_ENV: local
+  APP_KEY: base64:0GYuNG0Sg7NNP4CK0K2lVZ0EtxNv7POM9SqagcKBtKE=
+  APP_DEBUG: "true"
+  APP_URL: http://localhost
+  LOG_CHANNEL: stack
+  LOG_DEPRECATIONS_CHANNEL: null
+  LOG_LEVEL: debug
+  DB_CONNECTION: mysql
+  DB_HOST: 127.0.0.1
+  DB_PORT: "3306"
+  DB_DATABASE: ""
+  DB_USERNAME: ""
+  DB_PASSWORD: ""
+  BROADCAST_DRIVER: log
+  CACHE_DRIVER: file
+  FILESYSTEM_DISK: local
+  QUEUE_CONNECTION: sync
+  SESSION_DRIVER: file
+  SESSION_LIFETIME: "120"
+  MEMCACHED_HOST: 127.0.0.1
+  REDIS_HOST: 127.0.0.1
+  REDIS_PASSWORD: null
+  REDIS_PORT: "6379"
+  MAIL_MAILER: smtp
+  MAIL_HOST: mailhog
+  MAIL_PORT: "1025"
+  MAIL_USERNAME: null
+  MAIL_PASSWORD: null
+  MAIL_ENCRYPTION: null
+  MAIL_FROM_ADDRESS: "hello@example.com"
+  MAIL_FROM_NAME: "${APP_NAME}"
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_BUCKET: ""
+  AWS_USE_PATH_STYLE_ENDPOINT: "false"
+  PUSHER_APP_ID: ""
+  PUSHER_APP_KEY: ""
+  PUSHER_APP_SECRET: ""
+  PUSHER_APP_CLUSTER: mt1
+  MIX_PUSHER_APP_KEY: "${PUSHER_APP_KEY}"
+  MIX_PUSHER_APP_CLUSTER: "${PUSHER_APP_CLUSTER}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-eks-api
+  labels:
+    app: laravel-eks-api
+spec:
+  type: NodePort
+  selector:
+    app: laravel-eks-api
+  ports:
+    - port: 8080
+      targetPort: 8080 
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: laravel-eks-api-nginx
+data:
+  nginx.conf: |
+    worker_processes auto;
+    worker_rlimit_nofile 500000;
+    user app-user;
+
+    events {
+      use epoll;
+      worker_connections 30024;
+      multi_accept on;
+    }
+
+    http {
+      sendfile on;
+      tcp_nopush on;
+      server_tokens off;
+      tcp_nodelay on;
+      keepalive_timeout 20;
+      types_hash_max_size 2048;
+      server_names_hash_bucket_size 128;
+      proxy_read_timeout 300;
+      proxy_connect_timeout 300;
+      proxy_send_timeout 300;
+        
+      add_header "X-Server" $hostname;
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      log_format json_log escape=json
+        '{'
+          '"timestamp":"$time_iso8601",'
+          '"client_ip":"$remote_addr",'
+          '"source_ip": "$http_x_forwarded_for", '
+          '"source_user": "$remote_user", '
+          '"http_host": "$http_host",'
+          '"http_method":"$request_method",'
+          '"request_path":"$request_uri",'
+          '"query_parameters":"$args",'
+          '"status_code":$status,'
+          '"user_agent":"$http_user_agent",'
+          '"http_referer":"$http_referer",'
+          '"request": "$request", '
+          '"request_size":$request_length,'
+          '"response_size":$body_bytes_sent,'
+          '"response_time_ms":$request_time,'
+          '"upstream_addr": "$upstream_addr",'
+          '"upstream_response_time":"$upstream_response_time"'
+        '}';
+
+        gzip on;
+        gzip_disable            "msie6";
+        gzip_min_length         1000;
+        gzip_types              text/css text/plain text/javascript text/xml application/x-javascript application/xml application/xml+rss;
+
+        server {
+          listen 8080;
+          server_name _;
+
+          root /app/public;
+          index index.php index.html;
+
+          error_log /var/log/nginx/error.log;
+          access_log /var/log/nginx/access.log json_log;
+
+          location / {
+            try_files $uri $uri/ /index.php?$query_string;
+          }
+
+          location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: laravel-eks-api
+  name: laravel-eks-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: laravel-eks-api
+  template:
+    metadata:
+      labels:
+        name: laravel-eks-api
+        app: laravel-eks-api
+    spec:
+      containers:
+        - name: laravel-eks-api
+          image: 396608808038.dkr.ecr.us-east-1.amazonaws.com/laravel-eks:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          command:
+          - sh
+          - -c
+          - |
+            php-fpm & nginx -g 'daemon off;'
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 20
+          envFrom:
+            - configMapRef:
+                name: laravel-eks-api-env
+          resources:
+            limits:
+              cpu: 700m
+              memory: 800Mi
+            requests:
+              cpu: 500m
+              memory: 800Mi
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          securityContext:
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: laravel-eks-api-nginx
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: laravel-eks-api-autoscalling
+spec:
+  maxReplicas: 2
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: laravel-eks-api
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
