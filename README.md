@@ -81,14 +81,15 @@ This Terraform configuration will provision the following infrastructure:
 - To deploy the Laravel application to Kubernetes:
 
 **Configure kubectl:**
-   Update your local kubeconfig to point to the EKS cluster:
-
+   - Update your local kubeconfig to point to the EKS cluster:
    ```bash
    aws eks --region <your-region> update-kubeconfig --name <cluster-name>
+   ```
+
+
 
 **Deploy the application manifests:**
    Apply the Kubernetes manifests located in the k8s directory:
-
    ```bash
    kubectl apply -f k8s/
 
