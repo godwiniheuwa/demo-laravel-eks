@@ -22,7 +22,7 @@ To set up and run the application locally:
    git clone https://github.com/godwiniheuwa/demo-laravel-eks.git
    cd demo-laravel-eks
 
----
+
 
 ## 2. CI/CD Pipeline
 
@@ -45,7 +45,7 @@ To trigger the CI/CD pipeline using Jenkins:
 - **Test:** The pipeline runs the Laravel application's automated test suite.
 - **Deploy:** Deploys the built container to the EKS cluster using `kubectl`.
 
----
+
 
 ## 3. Infrastructure Provisioning with Terraform
 
@@ -60,5 +60,68 @@ To provision the infrastructure using Terraform:
    ```bash
    terraform init
 
+3. **Review the Terraform plan:**
+   Generate and review the execution plan:
+   ```bash
+   terraform plan
 
-   
+4. **Apply the configuration:**
+   Deploy the AWS resources required for the application:
+   ```bash
+   terraform apply
+
+This Terraform configuration will provision the following infrastructure:
+
+- An EKS cluster for Kubernetes workloads.
+- A VPC, subnets, and necessary networking configurations.
+- IAM roles and policies for EKS and application permissions.
+- An AWS Application Load Balancer for external access to the application.
+
+## Kubernetes Deployment
+- To deploy the Laravel application to Kubernetes:
+
+**Configure kubectl:**
+   Update your local kubeconfig to point to the EKS cluster:
+
+   ```bash
+   aws eks --region <your-region> update-kubeconfig --name <cluster-name>
+
+**Deploy the application manifests:**
+   Apply the Kubernetes manifests located in the k8s directory:
+
+   ```bash
+   kubectl apply -f k8s/
+
+**Verify the deployment:**
+   Check that the application pods are running:
+
+   ```bash
+   kubectl get pods
+
+## Verification
+To confirm the application is running successfully:
+
+** Verify pod status:**
+Ensure all pods are in the Running state:
+
+ ```bash
+kubectl get pods
+
+**Check service details:**
+   Confirm that the Kubernetes service is exposing the application:
+
+   ```bash
+   kubectl get services
+
+Access the application:
+Open the Load Balancer URL in your browser. The application should be accessible and functional.
+
+**Application URL**
+The deployed Laravel application is accessible at the following URL:
+
+http://k8s-ingressalb-88dae34828-1620760516.us-east-1.elb.amazonaws.com/
+
+For troubleshooting, you can inspect Kubernetes logs:
+
+   ```bash
+   kubectl logs <pod-name>
