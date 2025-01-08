@@ -1,0 +1,21 @@
+# Init Comamnd
+terraform init \
+-backend-config="bucket=eks-terraform-statefile-bucket" \
+-backend-config="key=cluster/ClusterAutoScaler/terraform.tfstate" \
+-backend-config="region=us-east-1"
+
+# Init Comamnd
+terraform plan \
+  -var "aws_region=us-east-1" \
+  -var "environment=prod" \
+  -var "business_divsion=services" \
+  -var "s3_bucket_name=eks-terraform-statefile-bucket" \
+  -var "s3_bucket_key=cluster/eks-cluster/terraform.tfstate"
+
+# Init Comamnd
+terraform apply \
+  -var "aws_region=us-east-1" \
+  -var "environment=prod" \
+  -var "business_divsion=services" \
+  -var "s3_bucket_name=eks-terraform-statefile-bucket" \
+  -var "s3_bucket_key=cluster/eks-cluster/terraform.tfstate"

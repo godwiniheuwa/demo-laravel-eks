@@ -1,0 +1,21 @@
+# Init Comamnd
+terraform init \
+-backend-config="bucket=eks-terraform-statefile-bucket" \
+-backend-config="key=cluster/MetricServer/terraform.tfstate" \
+-backend-config="region=us-east-1"
+
+# Plan Command
+terraform plan \
+  -var "aws_region=us-east-1" \
+  -var "environment=prod" \
+  -var "business_divsion=services" \
+  -var "s3_bucket_name=eks-terraform-statefile-bucket" \
+  -var "s3_bucket_key=cluster/eks-cluster/terraform.tfstate"
+
+# Apply Command
+terraform apply \
+  -var "aws_region=us-east-1" \
+  -var "environment=prod" \
+  -var "business_divsion=services" \
+  -var "s3_bucket_name=eks-terraform-statefile-bucket" \
+  -var "s3_bucket_key=cluster/eks-cluster/terraform.tfstate"
