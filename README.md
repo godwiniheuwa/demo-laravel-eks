@@ -1,110 +1,64 @@
-# Project Setup for Local Development
+# Demo Laravel Application on EKS
 
-This document provides step-by-step instructions for setting up the project for local development without Nginx.
+This repository contains a demo Laravel application configured for deployment on Amazon Elastic Kubernetes Service (EKS). The application leverages AWS services such as ECR for container image storage, Jenkins for CI/CD, and an ALB for ingress.
 
-## Prerequisites
+## Table of Contents
 
-Make sure you have the following installed on your local machine:
+1. [Local Setup](#local-setup)
+2. [CI/CD Pipeline](#cicd-pipeline)
+3. [Infrastructure Provisioning with Terraform](#infrastructure-provisioning-with-terraform)
+4. [Kubernetes Deployment](#kubernetes-deployment)
+5. [Verification](#verification)
+6. [Application URL](#application-url)
 
-- **Docker**: Ensure Docker is installed and running.
-- **Composer**: Install Composer for dependency management if not already installed.
-- **PHP**: PHP version 8.0 or higher is required for running the application locally.
-- **MySQL**: A MySQL database should be running locally or remotely.
+---
 
-## Getting Started
+## Local Setup
 
-Follow these steps to set up the project locally:
+To set up and run the application locally:
 
-### 1. Clone the Repository
-
-Clone the repository to your local machine:
-
-```bash
-git clone <repository-url>
-cd <repository-name>
-```
-
-### 2. Install Dependencies
-
-Install PHP dependencies using Composer:
-
-```bash
-composer install
-```
-
-### 3. Create Environment File
-
-Copy the `.env.example` file to `.env` and update it with your local configuration:
-
-```bash
-cp .env.example .env
-```
-
-Update the following variables in the `.env` file:
-
-- **DB_CONNECTION**: Database connection type (e.g., `mysql`)
-- **DB_HOST**: Database host (e.g., `127.0.0.1`)
-- **DB_PORT**: Database port (default: `3306`)
-- **DB_DATABASE**: Database name
-- **DB_USERNAME**: Database username
-- **DB_PASSWORD**: Database password
-
-### 4. Generate Application Key
-
-Generate the application key to secure your application:
-
-```bash
-php artisan key:generate
-```
-
-### 5. Run Database Migrations
-
-Run the migrations to set up your database schema:
-
-```bash
-php artisan migrate
-```
-
-### 6. Start the Development Server
-
-Start the built-in PHP development server:
-
-```bash
-php artisan serve
-```
-
-By default, the application will be available at `http://127.0.0.1:8000`.
-
-## Notes
-
-- The development setup bypasses Nginx for simplicity and uses PHP’s built-in development server.
-- Ensure your database server is running and accessible from your local machine.
-- For issues related to permissions or missing dependencies, ensure the required PHP extensions are installed (e.g., `pdo_mysql`, `zip`, `sockets`).
-
-## Directory Structure
-
-Here’s a brief overview of the project structure:
-
-```
-/app
-|-- public/        # Publicly accessible files
-|-- routes/        # Application routes
-|-- resources/     # Views, styles, and frontend assets
-|-- database/      # Migrations and seeds
-|-- .env.example   # Environment file example
-```
-
-## Troubleshooting
-
-If you encounter issues, consider the following steps:
-
-1. Verify all dependencies are installed:
-
+1. **Clone the repository:**
    ```bash
-   composer check-platform-reqs
-   ```
+   git clone https://github.com/godwiniheuwa/demo-laravel-eks.git
+   cd demo-laravel-eks
 
-2. Ensure PHP extensions required by the application are installed.
-3. Check your `.env` configuration for database connection errors.
+---
 
-For further assistance, consult the project documentation or contact the development team.
+## 2. CI/CD Pipeline
+
+To trigger the CI/CD pipeline using Jenkins:
+
+1. **Access the Jenkins dashboard:**
+   Navigate to the Jenkins URL: [http://3.88.32.141:8080/](http://3.88.32.141:8080/).
+
+2. **Set up credentials:**
+   - Configure AWS credentials to allow Jenkins to push the Docker image to Amazon ECR.
+   - Ensure ECR repository access is correctly configured in Jenkins.
+
+3. **Trigger the pipeline:**
+   - Push changes to the GitHub repository.
+   - Alternatively, manually trigger the pipeline from the Jenkins dashboard.
+
+### CI/CD Stages
+
+- **Build:** Jenkins builds the Docker image for the Laravel application and pushes it to Amazon ECR.
+- **Test:** The pipeline runs the Laravel application's automated test suite.
+- **Deploy:** Deploys the built container to the EKS cluster using `kubectl`.
+
+---
+
+## 3. Infrastructure Provisioning with Terraform
+
+To provision the infrastructure using Terraform:
+
+1. **Navigate to the Terraform directory:**
+   ```bash
+   cd EKSCluster
+
+2. **Initialize Terraform:**
+   Initialize the working directory for Terraform:
+   ```bash
+   terraform init
+
+
+   
