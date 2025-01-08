@@ -23,7 +23,7 @@ pipeline {
                 script {
                     checkout([$class: 'GitSCM', 
                         branches: [[name: "*/$branch_name"]], 
-                        userRemoteConfigs: [[url: "https://github.com/godwiniheuwa/Laravel-EKS.git", credentialsId: ""]]])
+                        userRemoteConfigs: [[url: "https://github.com/godwiniheuwa/demo-laravel-eks", credentialsId: ""]]])
                 }
             }
         }
